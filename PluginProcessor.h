@@ -1,5 +1,7 @@
 #pragma once
+#include "AudioBlockQueue.h"
 #include "SharedMemory.h"
+#include "WebSocketServer.h"
 #include <JuceHeader.h>
 
 // #include "httplib.h"
@@ -98,13 +100,21 @@ public:
 
     void ipc_make_primary();
     void ipc_setup();
+    void refreshPairingToken();
+    juce::String getPairingToken() const;
+    juce::String getLanAddress() const;
+
+    WebSocketServer& getWebSocketServer() noexcept { return network_server; }
+    const WebSocketServer& getWebSocketServer() const noexcept { return network_server; }
 
 private:
     std::array<float, 65536 * 2> m_interleaved_audio;
+    AudioBlockQueue network_audio_queue;
+    WebSocketServer network_server;
 
     int64_t m_uuid_hash = 0;
 
-    IPC_TYPE* m_ipc_ptr;
+    IPC_TYPE* m_ipc_ptr = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioPluginAudioProcessor)
 };

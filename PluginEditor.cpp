@@ -24,12 +24,20 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor(AudioPluginAudi
         repaint();
     };
 
+    addAndMakeVisible(m_refresh_pairing_button);
+    m_refresh_pairing_button.onClick = [&]() {
+        processorRef.refreshPairingToken();
+        repaint();
+    };
+
     setSize(800, 350);
     background = juce::ImageCache::getFromMemory(BinaryData::bg_png, BinaryData::bg_pngSize);
+    startTimerHz(1);
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor() {
     processorRef.editor_ptr = nullptr;
+    stopTimer();
     setLookAndFeel(nullptr);
 }
 
@@ -92,9 +100,21 @@ void AudioPluginAudioProcessorEditor::paint(juce::Graphics& g) {
         g.setColour(Colour(0.0f, 0.0f, 1.0f, 0.25f));
         g.drawText(juce::String(ProjectInfo::versionString), juce::Rectangle<int> { 15, 15, 100, 10 }, Justification::left);
     }
+
+    g.setColour(juce::Colours::white);
+    g.setFont(m_mm_look_and_feel.minimeters_font.withHeight(13));
+    g.drawFittedText("Phone pairing\nAddress: " + processorRef.getLanAddress()
+                         + ":8422\nToken: " + processorRef.getPairingToken(),
+                     juce::Rectangle<int> { 15, 190, 275, 100 },
+                     juce::Justification::left, 4);
 }
 
 void AudioPluginAudioProcessorEditor::resized() {
     m_primary_instance_button.setBounds(juce::Rectangle<int>(305 + 30, getHeight() / 2 - 25, getWidth() - 305 - 30 - 30, 50));
     m_reset_button.setBounds(juce::Rectangle<int>(getWidth() - 15 - 70, 15, 70, 25));
+    m_refresh_pairing_button.setBounds(juce::Rectangle<int>(15, 300, 150, 30));
+}
+
+void AudioPluginAudioProcessorEditor::timerCallback() {
+    repaint();
 }

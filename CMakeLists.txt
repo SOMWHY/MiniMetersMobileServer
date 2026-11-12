@@ -40,6 +40,9 @@ if(APPLE)
                 PRIVATE
                 MiniMetersOpener.cpp
                 PluginEditor.cpp
+                PairingToken.cpp
+                LanAddress.cpp
+                WebSocketServer.cpp
                 MacOsHelpers.mm
                 PluginProcessor.cpp)
 else()
@@ -47,6 +50,9 @@ else()
                 PRIVATE
                 MiniMetersOpener.cpp
                 PluginEditor.cpp
+                PairingToken.cpp
+                LanAddress.cpp
+                WebSocketServer.cpp
                 PluginProcessor.cpp)
 endif()
 

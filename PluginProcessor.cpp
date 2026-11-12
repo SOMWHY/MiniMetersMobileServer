@@ -2,6 +2,7 @@
 
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
+#include "LanAddress.h"
 #include "json.hpp"
 
 #include <fcntl.h>
@@ -108,15 +109,36 @@ void AudioPluginAudioProcessor::ipc_setup() {
     ipc_make_primary();
 }
 
+void AudioPluginAudioProcessor::refreshPairingToken() {
+    network_server.pairingToken().refresh();
+    triggerAsyncUpdate();
+}
+
+juce::String AudioPluginAudioProcessor::getPairingToken() const {
+    return network_server.pairingToken().current();
+}
+
+juce::String AudioPluginAudioProcessor::getLanAddress() const {
+    if (const auto address = LanAddress::findFirst())
+        return *address;
+    return "No LAN address";
+}
+
 AudioPluginAudioProcessor::AudioPluginAudioProcessor()
     : AudioProcessor(BusesProperties()
                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
-                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)) {
+                         .withOutput("Output", juce::AudioChannelSet::stereo(), true))
+    , network_server(network_audio_queue) {
+    server_state = StateError;
     m_uuid_hash = compute_hash(get_uuid());
     ipc_setup();
+    network_server.start();
 }
 
 AudioPluginAudioProcessor::~AudioPluginAudioProcessor() {
+    network_server.stop();
+    if (m_ipc_ptr == nullptr)
+        return;
     m_ipc_ptr->current_id = 0;
     editor_ptr = nullptr;
 }
@@ -199,7 +221,8 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     for (int i = n_input_channels; i < n_output_channels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
-    const size_t n_samples = static_cast<size_t>(buffer.getNumSamples() * 2);
+    const size_t samples_per_channel = static_cast<size_t>(buffer.getNumSamples());
+    const size_t n_samples = samples_per_channel * 2;
 
     // The DAW should really never send a buffer the larger than 65536 samples, but in the case that it does.
     if (n_samples >= m_interleaved_audio.size())
@@ -208,7 +231,7 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     if (n_input_channels == 1) {
         auto ptr_l = buffer.getReadPointer(0);
 
-        for (int i = 0; i < n_samples * 2; i += 2) {
+        for (size_t i = 0; i < n_samples; i += 2) {
             m_interleaved_audio[i + 0] = *(ptr_l + (i / 2));
             m_interleaved_audio[i + 1] = *(ptr_l + (i / 2));
         }
@@ -216,7 +239,7 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         auto ptr_l = buffer.getReadPointer(0);
         auto ptr_r = buffer.getReadPointer(1);
 
-        for (int i = 0; i < n_samples * 2; i += 2) {
+        for (size_t i = 0; i < n_samples; i += 2) {
             m_interleaved_audio[i + 0] = *(ptr_l + (i / 2));
             m_interleaved_audio[i + 1] = *(ptr_r + (i / 2));
         }
@@ -228,6 +251,12 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
     m_ipc_ptr->sample_rate = static_cast<int>(getSampleRate());
     m_ipc_ptr->block_size = getBlockSize();
+    network_audio_queue.tryWrite(m_interleaved_audio.data(),
+                                 n_samples,
+                                 static_cast<std::uint32_t>(getSampleRate()),
+                                 2,
+                                 static_cast<std::uint16_t>(samples_per_channel),
+                                 0);
 }
 
 bool AudioPluginAudioProcessor::hasEditor() const {
