@@ -177,8 +177,6 @@ void AudioPluginAudioProcessor::serviceNetwork() {
     if (get_button_state() == StatePrimary) {
         if (!network_server.isRunning())
             network_server.start();
-    } else if (network_server.isRunning()) {
-        network_server.stop();
     }
 }
 
