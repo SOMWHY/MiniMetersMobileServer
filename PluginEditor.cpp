@@ -74,6 +74,7 @@ void AudioPluginAudioProcessorEditor::resized() {
 }
 
 void AudioPluginAudioProcessorEditor::timerCallback() {
+    processorRef.serviceNetwork();
     updatePairingCode();
     repaint();
 }

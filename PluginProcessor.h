@@ -84,10 +84,7 @@ public:
     };
 
     std::atomic<ServerState> server_state;
-    void handleAsyncUpdate() override {
-        if (editor_ptr)
-            editor_ptr->repaint();
-    }
+    void handleAsyncUpdate() override;
 
     void set_button_state(ServerState s) {
         server_state = s;
@@ -101,6 +98,7 @@ public:
     void ipc_make_primary();
     void ipc_setup();
     void refreshPairingToken();
+    void serviceNetwork();
     juce::String getPairingToken() const;
     juce::String getLanAddress() const;
     juce::String getPairingPayload() const;

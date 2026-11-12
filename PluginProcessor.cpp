@@ -72,7 +72,8 @@ void AudioPluginAudioProcessor::ipc_setup() {
 
     m_ipc_ptr = nullptr;
     m_ipc_ptr = (IPC_TYPE*)mmap(nullptr, IPC_BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (m_ipc_ptr == nullptr) {
+    if (m_ipc_ptr == MAP_FAILED) {
+        m_ipc_ptr = nullptr;
         printf("Error when getting mmap()\n");
         return;
     }
@@ -162,6 +163,21 @@ AudioPluginAudioProcessor::~AudioPluginAudioProcessor() {
     editor_ptr = nullptr;
 }
 
+void AudioPluginAudioProcessor::handleAsyncUpdate() {
+    serviceNetwork();
+    if (editor_ptr)
+        editor_ptr->repaint();
+}
+
+void AudioPluginAudioProcessor::serviceNetwork() {
+    if (get_button_state() == StatePrimary) {
+        if (!network_server.isRunning())
+            network_server.start();
+    } else if (network_server.isRunning()) {
+        network_server.stop();
+    }
+}
+
 //==============================================================================
 const juce::String AudioPluginAudioProcessor::getName() const {
     return JucePlugin_Name;
@@ -226,6 +242,9 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::ignoreUnused(midiMessages);
 
     juce::ScopedNoDenormals no_denormals;
+    if (m_ipc_ptr == nullptr)
+        return;
+
     int n_input_channels = getTotalNumInputChannels();
     int n_output_channels = getTotalNumOutputChannels();
 
