@@ -6,3 +6,4 @@ build-windows
 build-ninja
 build
 .cache
+__pycache__
