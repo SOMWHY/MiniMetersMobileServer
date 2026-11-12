@@ -214,6 +214,14 @@ private:
     bool readExact(void* destination, int bytes) {
         auto* data = static_cast<std::uint8_t*>(destination);
         while (bytes > 0 && !stopping.load(std::memory_order_acquire)) {
+            if (!pendingBytes.empty()) {
+                const auto amount = std::min<std::size_t>(pendingBytes.size(), static_cast<std::size_t>(bytes));
+                std::memcpy(data, pendingBytes.data(), amount);
+                pendingBytes.erase(0, amount);
+                data += amount;
+                bytes -= static_cast<int>(amount);
+                continue;
+            }
             if (socket->waitUntilReady(true, 1000) <= 0)
                 continue;
             const auto read = socket->read(data, bytes, true);
@@ -236,6 +244,12 @@ private:
                 return false;
             request.append(buffer.data(), static_cast<std::size_t>(read));
         }
+
+        if (request.rfind("GET /ws ", 0) != 0)
+            return false;
+
+        const auto headerEnd = request.find("\r\n\r\n");
+        pendingBytes = request.substr(headerEnd + 4);
 
         const std::string keyName = "Sec-WebSocket-Key:";
         const auto keyPosition = request.find(keyName);
@@ -318,7 +332,14 @@ private:
             socket->close();
             return;
         }
-        while (!stopping.load(std::memory_order_acquire) && receiveControl()) {}
+        const auto authenticationDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+        while (!stopping.load(std::memory_order_acquire)) {
+            if (!authenticated.load(std::memory_order_acquire)
+                && std::chrono::steady_clock::now() >= authenticationDeadline)
+                break;
+            if (!receiveControl())
+                break;
+        }
         socket->close();
     }
 
@@ -328,6 +349,7 @@ private:
     std::atomic<bool> authenticated { false };
     std::mutex writeMutex;
     std::thread worker;
+    std::string pendingBytes;
 };
 
 WebSocketServer::WebSocketServer(AudioBlockQueue& queue, int serverPort)
