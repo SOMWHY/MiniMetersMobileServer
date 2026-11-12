@@ -1,9 +1,24 @@
 cmake_minimum_required(VERSION 3.15)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version" FORCE)
+cmake_minimum_required(VERSION 3.15)
 project(MiniMetersServer VERSION 1.0.8)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version" FORCE)
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+option(MINIMETERS_BUILD_TESTS "Build MiniMetersMobile unit tests" OFF)
+
+if(MINIMETERS_BUILD_TESTS)
+        enable_testing()
+        add_executable(MiniMetersMobileTests
+                tests/MiniMetersMobileTests.cpp
+                PairingToken.cpp)
+        target_include_directories(MiniMetersMobileTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        add_test(NAME MiniMetersMobileTests COMMAND MiniMetersMobileTests)
+endif()
+
 add_subdirectory(JUCE)
 add_subdirectory(clap-juce-extensions EXCLUDE_FROM_ALL)
 
