@@ -4,6 +4,7 @@ build-linux
 build-macos
 build-windows
 build-ninja
+build-ninja-x64
 build-tests
 build
 .cache
