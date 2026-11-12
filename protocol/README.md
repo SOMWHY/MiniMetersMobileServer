@@ -21,6 +21,16 @@ This directory is the protocol contract shared by the plugin and the future Reac
 
 The pairing token is short-lived and only authenticates new connections. Expiration does not terminate already authenticated connections.
 
+## Desktop test client
+
+Until the React Native client exists, the standard-library Python client can verify the connection and audio frames:
+
+```powershell
+python tools/test_client.py --address 192.168.1.20 --token <token>
+```
+
+Copy the address and token from the plugin editor. The client performs the same WebSocket handshake and authentication as the future mobile client, then calculates and prints peak/RMS values from each audio frame.
+
 ## Versioning
 
 The initial protocol version is `1`.
