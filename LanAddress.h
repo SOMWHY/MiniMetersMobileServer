@@ -10,4 +10,5 @@ public:
 
 private:
     static bool isUsableIPv4(const juce::String& address);
+    static bool isPrivateIPv4(const juce::String& address);
 };
