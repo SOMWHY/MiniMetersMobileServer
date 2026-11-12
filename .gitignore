@@ -10,3 +10,5 @@ build-tests
 build
 .cache
 __pycache__
+.pi
+.vs
