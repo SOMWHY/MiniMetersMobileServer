@@ -43,6 +43,8 @@ if(APPLE)
                 PairingToken.cpp
                 LanAddress.cpp
                 WebSocketServer.cpp
+                QrCodeImage.cpp
+                third_party/qrcodegen/qrcodegen.cpp
                 MacOsHelpers.mm
                 PluginProcessor.cpp)
 else()
@@ -53,6 +55,8 @@ else()
                 PairingToken.cpp
                 LanAddress.cpp
                 WebSocketServer.cpp
+                QrCodeImage.cpp
+                third_party/qrcodegen/qrcodegen.cpp
                 PluginProcessor.cpp)
 endif()
 

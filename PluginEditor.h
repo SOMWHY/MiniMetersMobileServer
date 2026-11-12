@@ -1,6 +1,7 @@
 #pragma once
 #include "LookAndFeel.h"
 #include "PluginProcessor.h"
+#include "QrCodeImage.h"
 #include <thread>
 
 class AudioPluginAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer {
@@ -21,8 +22,11 @@ private:
     juce::TextButton m_refresh_pairing_button { "Refresh pairing" };
 
     AudioPluginAudioProcessor& processorRef;
+    juce::Image pairingQrCode;
+    juce::String pairingPayload;
 
     void timerCallback() override;
+    void updatePairingCode();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioPluginAudioProcessorEditor)
 };

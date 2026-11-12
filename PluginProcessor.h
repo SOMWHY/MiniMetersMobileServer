@@ -103,6 +103,7 @@ public:
     void refreshPairingToken();
     juce::String getPairingToken() const;
     juce::String getLanAddress() const;
+    juce::String getPairingPayload() const;
 
     WebSocketServer& getWebSocketServer() noexcept { return network_server; }
     const WebSocketServer& getWebSocketServer() const noexcept { return network_server; }

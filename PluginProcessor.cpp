@@ -124,6 +124,17 @@ juce::String AudioPluginAudioProcessor::getLanAddress() const {
     return "No LAN address";
 }
 
+juce::String AudioPluginAudioProcessor::getPairingPayload() const {
+    nlohmann::json payload {
+        { "version", 1 },
+        { "address", getLanAddress().toStdString() },
+        { "port", WebSocketServer::defaultPort },
+        { "path", "/ws" },
+        { "token", getPairingToken().toStdString() }
+    };
+    return payload.dump();
+}
+
 AudioPluginAudioProcessor::AudioPluginAudioProcessor()
     : AudioProcessor(BusesProperties()
                          .withInput("Input", juce::AudioChannelSet::stereo(), true)

@@ -32,6 +32,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor(AudioPluginAudi
 
     setSize(800, 350);
     background = juce::ImageCache::getFromMemory(BinaryData::bg_png, BinaryData::bg_pngSize);
+    updatePairingCode();
     startTimerHz(1);
 }
 
@@ -103,6 +104,7 @@ void AudioPluginAudioProcessorEditor::paint(juce::Graphics& g) {
 
     g.setColour(juce::Colours::white);
     g.setFont(m_mm_look_and_feel.minimeters_font.withHeight(13));
+    g.drawImageWithin(pairingQrCode, 15, 45, 160, 160, juce::RectanglePlacement::centred);
     g.drawFittedText("Phone pairing\nAddress: " + processorRef.getLanAddress()
                          + ":8422\nToken: " + processorRef.getPairingToken(),
                      juce::Rectangle<int> { 15, 190, 275, 100 },
@@ -116,5 +118,14 @@ void AudioPluginAudioProcessorEditor::resized() {
 }
 
 void AudioPluginAudioProcessorEditor::timerCallback() {
+    updatePairingCode();
     repaint();
+}
+
+void AudioPluginAudioProcessorEditor::updatePairingCode() {
+    const auto newPayload = processorRef.getPairingPayload();
+    if (newPayload != pairingPayload) {
+        pairingPayload = newPayload;
+        pairingQrCode = QrCodeImage::create(pairingPayload);
+    }
 }
