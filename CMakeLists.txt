@@ -26,7 +26,7 @@ juce_add_plugin(MiniMetersServer
         COMPANY_NAME Direct
         COMPANY_WEBSITE https://minimeters.app/
         COMPANY_EMAIL contact@directmusic.me
-        BUNDLE_ID com.josephlyncheski.MiniMetersServer
+         BUNDLE_ID com.josephlyncheski.MiniMetersMobile
         VST3_CATEGORIES Fx Tools
         AU_MAIN_TYPE kAudioUnitType_Effect
         IS_MIDI_EFFECT FALSE
@@ -36,7 +36,7 @@ juce_add_plugin(MiniMetersServer
         EDITOR_WANTS_KEYBOARD_FOCUS FALSE
         COPY_PLUGIN_AFTER_BUILD FALSE
         PLUGIN_MANUFACTURER_CODE Jldr
-        PLUGIN_CODE mmsv
+         PLUGIN_CODE Mmob
         FORMATS AU VST3 Standalone
         PRODUCT_NAME "MiniMetersMobile")
 
