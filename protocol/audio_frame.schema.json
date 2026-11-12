@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MiniMetersMobile audio frame header",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["magic", "version", "messageType", "headerSize", "timestamp", "sampleRate", "channels", "samplesPerChannel", "sampleFormat", "payloadSize"],
+  "properties": {
+    "magic": { "const": "MMSA" },
+    "version": { "const": 1 },
+    "messageType": { "const": 1 },
+    "headerSize": { "const": 32 },
+    "timestamp": { "type": "integer", "minimum": 0 },
+    "sampleRate": { "type": "integer", "minimum": 1 },
+    "channels": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "samplesPerChannel": { "type": "integer", "minimum": 1, "maximum": 65536 },
+    "sampleFormat": { "const": 1 },
+    "payloadSize": { "type": "integer", "minimum": 4 }
+  }
+}

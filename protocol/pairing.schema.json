@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MiniMetersMobile pairing payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "address", "port", "path", "token"],
+  "properties": {
+    "version": { "const": 1 },
+    "address": { "type": "string", "minLength": 1 },
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "path": { "const": "/ws" },
+    "token": { "type": "string", "minLength": 1 }
+  }
+}

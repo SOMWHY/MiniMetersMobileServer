@@ -260,6 +260,8 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         buffer.clear(i, 0, buffer.getNumSamples());
 
     const size_t samples_per_channel = static_cast<size_t>(buffer.getNumSamples());
+    if (samples_per_channel == 0 || samples_per_channel > AudioBlock::maxSamplesPerChannel)
+        return;
     const size_t n_samples = samples_per_channel * 2;
 
     // The DAW should really never send a buffer the larger than 65536 samples, but in the case that it does.

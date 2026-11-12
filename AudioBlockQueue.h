@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 struct AudioBlock {
     static constexpr std::size_t maxSamplesPerChannel = 65536;
@@ -27,7 +28,10 @@ public:
                   std::uint16_t channels,
                   std::uint16_t samplesPerChannel,
                   std::uint64_t timestampMilliseconds) noexcept {
-        if (source == nullptr || sampleCount > AudioBlock::maxSamples)
+        if (source == nullptr || sampleCount > AudioBlock::maxSamples
+            || channels == 0 || channels > AudioBlock::maxChannels
+            || samplesPerChannel == 0
+            || samplesPerChannel > std::numeric_limits<std::uint16_t>::max())
             return false;
 
         const auto write = writeIndex.load(std::memory_order_relaxed);

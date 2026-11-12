@@ -34,3 +34,9 @@ Copy the address and token from the plugin editor. The client performs the same 
 ## Versioning
 
 The initial protocol version is `1`.
+
+Machine-readable definitions are provided in:
+
+- `pairing.schema.json`
+- `control.schema.json`
+- `audio_frame.schema.json` (the binary header represented as fields)

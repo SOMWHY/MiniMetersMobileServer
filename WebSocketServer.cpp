@@ -142,7 +142,8 @@ public:
         payload[4] = 1;
         payload[5] = 1;
         writeU16(payload.data() + 6, 32);
-        writeU64(payload.data() + 8, block.timestampMilliseconds);
+        writeU64(payload.data() + 8,
+                 block.timestampMilliseconds != 0 ? block.timestampMilliseconds : nowMilliseconds());
         writeU32(payload.data() + 16, block.sampleRate);
         writeU16(payload.data() + 20, block.channels);
         writeU16(payload.data() + 22, block.samplesPerChannel);
