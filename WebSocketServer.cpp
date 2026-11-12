@@ -224,9 +224,11 @@ private:
             }
             if (socket->waitUntilReady(true, 1000) <= 0)
                 continue;
-            const auto read = socket->read(data, bytes, true);
-            if (read <= 0)
+            const auto read = socket->read(data, bytes, false);
+            if (read < 0)
                 return false;
+            if (read == 0)
+                continue;
             data += read;
             bytes -= read;
         }
