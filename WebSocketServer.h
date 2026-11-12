@@ -21,6 +21,7 @@ public:
     bool start();
     void stop();
     bool isRunning() const noexcept;
+    std::size_t connectedClientCount() const;
 
     PairingToken& pairingToken() noexcept { return token; }
     const PairingToken& pairingToken() const noexcept { return token; }
@@ -40,7 +41,7 @@ private:
     juce::StreamingSocket listener;
     std::thread acceptThread;
     std::thread broadcastThread;
-    std::mutex clientsMutex;
+    mutable std::mutex clientsMutex;
     std::vector<std::shared_ptr<ClientSession>> clients;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WebSocketServer)

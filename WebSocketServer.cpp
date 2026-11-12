@@ -130,6 +130,7 @@ public:
     }
 
     bool isAuthenticated() const noexcept { return authenticated.load(std::memory_order_acquire); }
+    bool isStopped() const noexcept { return stopping.load(std::memory_order_acquire); }
 
     bool sendBinary(const AudioBlock& block) {
         std::lock_guard lock(writeMutex);
@@ -148,7 +149,12 @@ public:
         writeU32(payload.data() + 24, 1);
         writeU32(payload.data() + 28, static_cast<std::uint32_t>(payload.size() - 32));
         std::memcpy(payload.data() + 32, block.samples.data(), payload.size() - 32);
-        return sendFrame(0x2, payload.data(), payload.size());
+        const auto sent = sendFrame(0x2, payload.data(), payload.size());
+        if (!sent) {
+            stopping.store(true, std::memory_order_release);
+            socket->close();
+        }
+        return sent;
     }
 
 private:
@@ -364,6 +370,15 @@ bool WebSocketServer::isRunning() const noexcept {
     return running.load(std::memory_order_acquire);
 }
 
+std::size_t WebSocketServer::connectedClientCount() const {
+    std::lock_guard lock(clientsMutex);
+    std::size_t count = 0;
+    for (const auto& client : clients)
+        if (client->isAuthenticated() && !client->isStopped())
+            ++count;
+    return count;
+}
+
 void WebSocketServer::acceptLoop() {
     while (running.load(std::memory_order_acquire)) {
         std::unique_ptr<juce::StreamingSocket> client(listener.waitForNextConnection());
@@ -384,6 +399,10 @@ void WebSocketServer::broadcastLoop() {
         for (auto& client : clients)
             if (client->isAuthenticated())
                 client->sendBinary(*block);
+        clients.erase(std::remove_if(clients.begin(), clients.end(), [](const auto& client) {
+                          return client->isStopped();
+                      }),
+                      clients.end());
         audioQueue.endRead();
     }
 }

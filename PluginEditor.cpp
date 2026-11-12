@@ -59,6 +59,13 @@ void AudioPluginAudioProcessorEditor::paint(juce::Graphics& g) {
         ? "Audio source: primary"
         : "Audio source: another instance";
     g.drawText(status, 280, 280, getWidth() - 305, 24, juce::Justification::left);
+    g.drawText("Network: " + juce::String(processorRef.isNetworkRunning() ? "listening" : "unavailable")
+                   + "  Clients: " + juce::String(static_cast<int>(processorRef.getConnectedClientCount())),
+               280,
+               300,
+               getWidth() - 305,
+               24,
+               juce::Justification::left);
 }
 
 void AudioPluginAudioProcessorEditor::resized() {

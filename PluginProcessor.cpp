@@ -135,6 +135,14 @@ juce::String AudioPluginAudioProcessor::getPairingPayload() const {
     return payload.dump();
 }
 
+std::size_t AudioPluginAudioProcessor::getConnectedClientCount() const {
+    return network_server.connectedClientCount();
+}
+
+bool AudioPluginAudioProcessor::isNetworkRunning() const noexcept {
+    return network_server.isRunning();
+}
+
 AudioPluginAudioProcessor::AudioPluginAudioProcessor()
     : AudioProcessor(BusesProperties()
                          .withInput("Input", juce::AudioChannelSet::stereo(), true)

@@ -104,6 +104,8 @@ public:
     juce::String getPairingToken() const;
     juce::String getLanAddress() const;
     juce::String getPairingPayload() const;
+    std::size_t getConnectedClientCount() const;
+    bool isNetworkRunning() const noexcept;
 
     WebSocketServer& getWebSocketServer() noexcept { return network_server; }
     const WebSocketServer& getWebSocketServer() const noexcept { return network_server; }
