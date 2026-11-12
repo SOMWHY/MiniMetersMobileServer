@@ -21,33 +21,38 @@ Keep the existing MiniMeters shared-memory output and add a LAN WebSocket mirror
 
 - CMake/Ninja build and recursive submodules.
 - Shared-memory audio path retained.
-- Fixed-size audio mirror queue.
+- Fixed-size audio mirror queue with bounds checks.
 - Initial WebSocket server and binary frame format.
-- Pairing token generation and LAN IPv4 discovery.
+- WebSocket path validation, handshake buffering, authentication timeout, ping/pong, and failed-client cleanup.
+- Primary-instance service start/stop handoff logic on non-audio threads.
+- Pairing token generation, expiry, refresh, and LAN IPv4 discovery.
 - QR code generation and editor integration.
 - MiniMetersMobile editor layout without the upstream logo asset.
+- Pairing expiry display and clipboard copy of the pairing payload.
+- Formal pairing, control, and audio-frame protocol schemas.
 - Desktop Python WebSocket/audio test client.
-- Basic failed-client cleanup and authenticated client count.
+- Native CTest coverage for pairing tokens and the audio queue.
+- Full Ninja build for Standalone, VST3, and CLAP.
 - Build commits are kept separate by feature.
 
 ## Remaining automated work
 
-1. Formalize protocol schemas and fixtures.
-2. Make primary-instance ownership explicit for the network service.
-3. Make service start/stop and primary handoff happen outside the audio callback.
-4. Fix audio frame timestamps, bounds, and queue drop policy.
-5. Harden WebSocket handshake, path validation, control frames, limits, and shutdown.
-6. Add automated tests for pairing, LAN filtering, frame encoding, and protocol errors.
-7. Improve pairing UI status, expiry, and copyable payload.
-8. Run full Ninja builds and automated tests after each major change.
+- Decide and document the exact queue overflow policy for high-rate raw audio.
+- Add stronger integration coverage for a valid authenticated WebSocket session and binary audio frame delivery.
+- Add platform-specific LAN address tests where the host environment permits them.
+- Review PluginVal-sensitive lifecycle paths and finalize release build settings.
 
 ## Manual validation gate
 
-Pause only when the automated work is complete and these actions are required:
+Automated implementation is paused here until the following actions are performed with the generated build:
 
-- Scan the QR code with a real phone.
+- Open the Standalone and scan the QR code with a real phone.
+- Run the desktop client with the copied pairing payload and verify valid-token audio delivery.
 - Run the React Native client, once it exists.
 - Load the VST3/CLAP in a real DAW and play known test signals.
 - Test primary handoff with multiple DAW/plugin instances.
+- Verify peak/RMS values against known signals.
 - Run PluginVal at the required strictness.
 - Verify long-running behavior on supported operating systems.
+
+After manual validation, return to the remaining automated items with any observed protocol or lifecycle failures.
