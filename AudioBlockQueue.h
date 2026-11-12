@@ -58,6 +58,17 @@ public:
         return &blocks[read];
     }
 
+    const AudioBlock* beginLatestRead() noexcept {
+        const auto read = readIndex.load(std::memory_order_relaxed);
+        const auto write = writeIndex.load(std::memory_order_acquire);
+        if (read == write)
+            return nullptr;
+
+        const auto latest = (write + capacity - 1) % capacity;
+        readIndex.store(latest, std::memory_order_release);
+        return &blocks[latest];
+    }
+
     void endRead() noexcept {
         const auto read = readIndex.load(std::memory_order_relaxed);
         readIndex.store((read + 1) % capacity, std::memory_order_release);

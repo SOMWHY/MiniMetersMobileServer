@@ -411,8 +411,17 @@ void WebSocketServer::acceptLoop() {
 }
 
 void WebSocketServer::broadcastLoop() {
+    constexpr auto broadcastInterval = std::chrono::milliseconds(33);
+    auto nextBroadcast = std::chrono::steady_clock::now();
+
     while (running.load(std::memory_order_acquire)) {
-        const auto* block = audioQueue.beginRead();
+        const auto now = std::chrono::steady_clock::now();
+        if (now < nextBroadcast) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            continue;
+        }
+
+        const auto* block = audioQueue.beginLatestRead();
         if (block == nullptr) {
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
             continue;
@@ -427,6 +436,7 @@ void WebSocketServer::broadcastLoop() {
                       }),
                       clients.end());
         audioQueue.endRead();
+        nextBroadcast = std::chrono::steady_clock::now() + broadcastInterval;
     }
 }
 
