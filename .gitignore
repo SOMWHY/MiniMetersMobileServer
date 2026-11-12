@@ -4,6 +4,7 @@ build-linux
 build-macos
 build-windows
 build-ninja
+build-tests
 build
 .cache
 __pycache__
