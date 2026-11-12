@@ -14,10 +14,7 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    juce::Image background;
-
 private:
-    juce::TextButton m_primary_instance_button { "Click here to set this instance as the primary." };
     juce::TextButton m_reset_button { "Reset" };
     juce::TextButton m_refresh_pairing_button { "Refresh pairing" };
 

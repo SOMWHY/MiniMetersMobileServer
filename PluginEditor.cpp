@@ -12,12 +12,6 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor(AudioPluginAudi
     , processorRef(p) {
     juce::ignoreUnused(processorRef);
     setLookAndFeel(&m_mm_look_and_feel);
-    addAndMakeVisible(m_primary_instance_button);
-    m_primary_instance_button.onClick = [&]() {
-        processorRef.ipc_make_primary();
-        repaint();
-    };
-
     addAndMakeVisible(m_reset_button);
     m_reset_button.onClick = [&]() {
         processorRef.ipc_setup();
@@ -31,7 +25,6 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor(AudioPluginAudi
     };
 
     setSize(800, 350);
-    background = juce::ImageCache::getFromMemory(BinaryData::bg_png, BinaryData::bg_pngSize);
     updatePairingCode();
     startTimerHz(1);
 }
@@ -44,77 +37,33 @@ AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor() {
 
 //==============================================================================
 void AudioPluginAudioProcessorEditor::paint(juce::Graphics& g) {
-    g.drawImageWithin(background, 0, 0, getWidth(), getHeight(), juce::RectanglePlacement::stretchToFit);
+    g.fillAll(juce::Colour(24, 30, 40));
     g.setColour(juce::Colours::white);
     g.setFont(m_mm_look_and_feel.minimeters_font.withHeight(24));
+    g.drawText("MiniMetersMobile", 24, 14, getWidth() - 150, 30, juce::Justification::left);
 
-    auto text_rect = juce::Rectangle<int>(305, 0, getWidth() - 305, getHeight());
-
-    bool draw_open_text = false;
-
-    if (processorRef.server_state == processorRef.StatePrimary) {
-        g.drawFittedText("Currently set as primary instance.",
-                         text_rect,
-                         juce::Justification::centred, 1);
-
-        m_primary_instance_button.setVisible(false);
-        draw_open_text = true;
-    } else if (processorRef.server_state == AudioPluginAudioProcessor::StateCannotFindMiniMeters) {
-        g.drawFittedText("Cannot connect to MiniMeters.\nPlease ensure the standalone MiniMeters instance is open.",
-                         text_rect,
-                         juce::Justification::centred, 2);
-
-        m_primary_instance_button.setVisible(false);
-        draw_open_text = false;
-    } else if (processorRef.server_state == AudioPluginAudioProcessor::StateNotPrimary) {
-        g.drawFittedText("Another instance is sending audio to MiniMeters.",
-                         text_rect,
-                         juce::Justification::centred, 1);
-
-        m_primary_instance_button.setVisible(true);
-        draw_open_text = true;
-    } else if (processorRef.server_state == AudioPluginAudioProcessor::StateError) {
-        g.drawFittedText("An error occurred while trying to access port 8422.\nPlease contact support.",
-                         text_rect,
-                         juce::Justification::centred, 2);
-
-        m_primary_instance_button.setVisible(false);
-        draw_open_text = false;
-    }
-
-    if (draw_open_text) {
-        auto open_rect = text_rect.withTop(getHeight() / 2).withBottom(getHeight());
-
-        g.setColour(Colour(0.0f, 0.0f, 1.0f, 0.5f));
-
-#if defined(__APPLE__)
-        g.drawFittedText("If MiniMeters is not open\nplease open it from the Applications Folder.",
-#elif defined(_WIN32)
-        g.drawFittedText("If MiniMeters is not open\nplease open it from the Start Menu.",
-#elif defined(__linux__)
-        g.drawFittedText("If MiniMeters is not open\nplease open it from the folder you installed the .AppImage.",
-#endif
-                         open_rect, juce::Justification::centred, 2);
-    }
-
-    {
-        g.setColour(Colour(0.0f, 0.0f, 1.0f, 0.25f));
-        g.drawText(juce::String(ProjectInfo::versionString), juce::Rectangle<int> { 15, 15, 100, 10 }, Justification::left);
-    }
+    g.setFont(m_mm_look_and_feel.minimeters_font.withHeight(13));
+    g.setColour(juce::Colour(180, 195, 215));
+    g.drawText(juce::String(ProjectInfo::versionString), 24, 43, 120, 18, juce::Justification::left);
 
     g.setColour(juce::Colours::white);
-    g.setFont(m_mm_look_and_feel.minimeters_font.withHeight(13));
-    g.drawImageWithin(pairingQrCode, 15, 45, 160, 160, juce::RectanglePlacement::centred);
-    g.drawFittedText("Phone pairing\nAddress: " + processorRef.getLanAddress()
-                         + ":8422\nToken: " + processorRef.getPairingToken(),
-                     juce::Rectangle<int> { 15, 190, 275, 100 },
-                     juce::Justification::left, 4);
+    g.drawImageWithin(pairingQrCode, 24, 72, 220, 220, juce::RectanglePlacement::centred);
+
+    auto info = juce::String("Scan to connect\n\nAddress: ") + processorRef.getLanAddress()
+        + ":8422\nPath: /ws\n\nToken:\n" + processorRef.getPairingToken();
+    g.drawFittedText(info, juce::Rectangle<int> { 280, 72, getWidth() - 305, 190 },
+                     juce::Justification::left, 8);
+
+    g.setColour(juce::Colour(180, 195, 215));
+    const auto status = processorRef.server_state == processorRef.StatePrimary
+        ? "Audio source: primary"
+        : "Audio source: another instance";
+    g.drawText(status, 280, 280, getWidth() - 305, 24, juce::Justification::left);
 }
 
 void AudioPluginAudioProcessorEditor::resized() {
-    m_primary_instance_button.setBounds(juce::Rectangle<int>(305 + 30, getHeight() / 2 - 25, getWidth() - 305 - 30 - 30, 50));
-    m_reset_button.setBounds(juce::Rectangle<int>(getWidth() - 15 - 70, 15, 70, 25));
-    m_refresh_pairing_button.setBounds(juce::Rectangle<int>(15, 300, 150, 30));
+    m_reset_button.setBounds(juce::Rectangle<int>(getWidth() - 100, 16, 75, 28));
+    m_refresh_pairing_button.setBounds(juce::Rectangle<int>(280, 315, 180, 30));
 }
 
 void AudioPluginAudioProcessorEditor::timerCallback() {

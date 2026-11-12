@@ -23,7 +23,7 @@ juce_add_plugin(MiniMetersServer
         PLUGIN_MANUFACTURER_CODE Jldr
         PLUGIN_CODE mmsv
         FORMATS AU VST3 Standalone
-        PRODUCT_NAME "MiniMetersServer")
+        PRODUCT_NAME "MiniMetersMobile")
 
 clap_juce_extensions_plugin(TARGET MiniMetersServer
         CLAP_ID "com.josephlyncheski.MiniMetersServer"
@@ -82,7 +82,7 @@ target_compile_definitions(MiniMetersServer
 # the SOURCES argument should be followed by a list of source files that should be built into the
 # static library. These source files can be of any kind (wav data, images, fonts, icons etc.).
 # Conversion to binary-data will happen when your target is built.
-juce_add_binary_data(AudioPluginData SOURCES "Assets/SpaceMono-Regular.ttf" "Assets/bg.png")
+juce_add_binary_data(AudioPluginData SOURCES "Assets/SpaceMono-Regular.ttf")
 
 # `target_link_libraries` links libraries and JUCE modules to other libraries or executables. Here,
 # we're linking our executable target to the `juce::juce_audio_utils` module. Inter-module
