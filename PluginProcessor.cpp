@@ -136,6 +136,10 @@ juce::String AudioPluginAudioProcessor::getPairingPayload() const {
     return payload.dump();
 }
 
+int AudioPluginAudioProcessor::getPairingSecondsRemaining() const {
+    return static_cast<int>(network_server.pairingToken().remaining().count());
+}
+
 std::size_t AudioPluginAudioProcessor::getConnectedClientCount() const {
     return network_server.connectedClientCount();
 }

@@ -102,6 +102,7 @@ public:
     juce::String getPairingToken() const;
     juce::String getLanAddress() const;
     juce::String getPairingPayload() const;
+    int getPairingSecondsRemaining() const;
     std::size_t getConnectedClientCount() const;
     bool isNetworkRunning() const noexcept;
 

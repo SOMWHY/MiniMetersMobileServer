@@ -24,6 +24,11 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor(AudioPluginAudi
         repaint();
     };
 
+    addAndMakeVisible(m_copy_pairing_button);
+    m_copy_pairing_button.onClick = [&]() {
+        juce::SystemClipboard::copyTextToClipboard(processorRef.getPairingPayload());
+    };
+
     setSize(800, 350);
     updatePairingCode();
     startTimerHz(1);
@@ -50,7 +55,8 @@ void AudioPluginAudioProcessorEditor::paint(juce::Graphics& g) {
     g.drawImageWithin(pairingQrCode, 24, 72, 220, 220, juce::RectanglePlacement::centred);
 
     auto info = juce::String("Scan to connect\n\nAddress: ") + processorRef.getLanAddress()
-        + ":8422\nPath: /ws\n\nToken:\n" + processorRef.getPairingToken();
+        + ":8422\nPath: /ws\n\nToken:\n" + processorRef.getPairingToken()
+        + "\n\nExpires in: " + juce::String(processorRef.getPairingSecondsRemaining()) + "s";
     g.drawFittedText(info, juce::Rectangle<int> { 280, 72, getWidth() - 305, 190 },
                      juce::Justification::left, 8);
 
@@ -71,6 +77,7 @@ void AudioPluginAudioProcessorEditor::paint(juce::Graphics& g) {
 void AudioPluginAudioProcessorEditor::resized() {
     m_reset_button.setBounds(juce::Rectangle<int>(getWidth() - 100, 16, 75, 28));
     m_refresh_pairing_button.setBounds(juce::Rectangle<int>(280, 315, 180, 30));
+    m_copy_pairing_button.setBounds(juce::Rectangle<int>(470, 315, 160, 30));
 }
 
 void AudioPluginAudioProcessorEditor::timerCallback() {
