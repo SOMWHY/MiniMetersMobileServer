@@ -177,8 +177,6 @@ private:
     bool writeAll(const void* source, int bytes) {
         auto* data = static_cast<const std::uint8_t*>(source);
         while (bytes > 0) {
-            if (socket->waitUntilReady(false, 2000) <= 0)
-                return false;
             const auto written = socket->write(data, bytes);
             if (written <= 0)
                 return false;
