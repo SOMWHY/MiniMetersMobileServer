@@ -10,8 +10,38 @@
 #include <string_view>
 #include <vector>
 
+#if JUCE_WINDOWS
+ #include <winsock2.h>
+#else
+ #include <netinet/in.h>
+ #include <netinet/tcp.h>
+#endif
+
 namespace {
 using json = nlohmann::json;
+
+/**
+ * Stop the stack from batching our writes.
+ *
+ * This JUCE build predates `StreamingSocket::setNoDelay`, so the option goes on
+ * the raw handle. Nagle holds a small write until the previous one is ACKed; on
+ * a 100 Hz audio stream of ~2 KB messages that is tens of milliseconds of extra
+ * latency per packet, and the listener hears it as the meters trailing the sound.
+ * Each socket has a single writer, so there is nothing worth coalescing.
+ */
+bool disableNagleDelay(juce::StreamingSocket& socket) {
+    const auto handle = socket.getRawSocketHandle();
+    if (handle < 0)
+        return false;
+
+    const int enabled = 1;
+#if JUCE_WINDOWS
+    return ::setsockopt(handle, IPPROTO_TCP, TCP_NODELAY,
+                        reinterpret_cast<const char*>(&enabled), sizeof(enabled)) == 0;
+#else
+    return ::setsockopt(handle, IPPROTO_TCP, TCP_NODELAY, &enabled, sizeof(enabled)) == 0;
+#endif
+}
 
 std::uint32_t rotateLeft(std::uint32_t value, int bits) {
     return (value << bits) | (value >> (32 - bits));
@@ -115,7 +145,11 @@ std::uint64_t nowMilliseconds() {
 class WebSocketServer::ClientSession : public std::enable_shared_from_this<ClientSession> {
 public:
     ClientSession(std::unique_ptr<juce::StreamingSocket> client, PairingToken& pairingToken)
-        : socket(std::move(client)), token(pairingToken) {}
+        : socket(std::move(client)), token(pairingToken)
+    {
+        if (socket != nullptr)
+            disableNagleDelay(*socket);
+    }
 
     ~ClientSession() { stopAndJoin(); }
 
