@@ -31,8 +31,17 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor(AudioPluginAudi
 
     addAndMakeVisible(m_forget_devices_button);
     m_forget_devices_button.onClick = [&]() {
-        // Revokes every phone that paired with an earlier QR code.
-        processorRef.forgetPairedDevices();
+        // Revokes every phone that paired with an earlier QR code. If the data
+        // folder is read-only the phones are only forgotten for this session,
+        // so say so instead of claiming they are gone.
+        if (!processorRef.forgetPairedDevices()) {
+            juce::NativeMessageBox::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon,
+                "Could not forget paired phones",
+                "The settings folder is read-only, so the stored device tokens could "
+                "not be removed. Paired phones stay forgotten only until the plugin "
+                "restarts; fix the folder permissions and try again.");
+        }
         repaint();
     };
 

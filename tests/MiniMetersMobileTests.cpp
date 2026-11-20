@@ -8,6 +8,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace {
 void testPairingToken() {
@@ -65,7 +66,12 @@ void testDeviceTokens() {
 }
 
 void testDeviceTokenPersistence() {
-    const auto path = std::filesystem::temp_directory_path() / "minimeters_device_tokens_test.txt";
+    // A unique directory per invocation: concurrent test executables must not
+    // delete each other's token file mid-assertion.
+    const auto marker = std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    const auto directory = std::filesystem::temp_directory_path() / ("minimeters_tokens_" + marker);
+    std::filesystem::create_directories(directory);
+    const auto path = directory / "device_tokens.txt";
     std::filesystem::remove(path);
     const auto storePath = path.string();
 
@@ -90,7 +96,7 @@ void testDeviceTokenPersistence() {
         assert(cleared.deviceTokenCount() == 0);
     }
 
-    std::filesystem::remove(path);
+    std::filesystem::remove_all(directory);
 }
 
 void testAudioBlockQueue() {
@@ -138,6 +144,28 @@ void testAudioBlockCoalescing() {
     assert(empty->channels == 0);
     assert(empty->samplesPerChannel == 0);
 }
+void testAudioBlockAggregateCap() {
+    auto queue = std::make_unique<AudioBlockQueue>();
+    constexpr std::size_t perChannel = 32768;
+
+    auto block = std::make_unique<std::vector<float>>(perChannel * 2, 0.5f);
+    assert(queue->tryWrite(block->data(), block->size(), 48000, 2,
+                           static_cast<std::uint16_t>(perChannel), 10));
+    assert(queue->tryWrite(block->data(), block->size(), 48000, 2,
+                           static_cast<std::uint16_t>(perChannel), 20));
+
+    // 32768 + 32768 fits the 65536-sample destination but would report zero in
+    // a uint16_t, so the second block has to stay queued.
+    auto merged = std::make_unique<AudioBlock>();
+    assert(queue->readAll(*merged, AudioBlock::maxSamplesPerChannel) == 1);
+    assert(merged->samplesPerChannel == perChannel);
+
+    auto rest = std::make_unique<AudioBlock>();
+    assert(queue->readAll(*rest, AudioBlock::maxSamplesPerChannel) == 1);
+    assert(rest->samplesPerChannel == perChannel);
+    assert(queue->beginRead() == nullptr);
+}
+
 } // namespace
 
 int main() {
@@ -146,5 +174,6 @@ int main() {
     testDeviceTokenPersistence();
     testAudioBlockQueue();
     testAudioBlockCoalescing();
+    testAudioBlockAggregateCap();
     return 0;
 }

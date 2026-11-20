@@ -38,8 +38,14 @@ public:
     std::string issueDeviceToken();
     bool validateDeviceToken(const std::string& candidate) const;
     std::size_t deviceTokenCount() const;
-    /** Forces every phone to scan a new QR code. */
-    void forgetDeviceTokens();
+    /**
+     * Forces every phone to scan a new QR code.
+     *
+     * Returns false when the stored credentials could not be rewritten (a
+     * read-only data directory): the phones are forgotten for this session but
+     * would come back after a restart, so the caller must say so.
+     */
+    bool forgetDeviceTokens();
 
     /**
      * Accepts a device token, a live QR token, or a QR token that expired less
@@ -49,8 +55,13 @@ public:
 
 private:
     std::string makeToken() const;
-    void loadDeviceTokens();
-    void persistDeviceTokens(const std::vector<std::string>& tokens) const;
+    /**
+     * Re-reads the shared token file. Called with `mutex` held, before every
+     * read and every read-modify-write, because other plugin instances (in this
+     * host or another process) issue tokens into the same file.
+     */
+    void loadDeviceTokens() const;
+    bool persistDeviceTokens(const std::vector<std::string>& tokens) const;
 
     const std::chrono::minutes lifetime;
     static constexpr std::chrono::seconds grace { 120 };
@@ -61,5 +72,5 @@ private:
     Clock::time_point expiresAt {};
     std::string previousToken;
     Clock::time_point previousExpiresAt {};
-    std::vector<std::string> deviceTokens;
+    mutable std::vector<std::string> deviceTokens;
 };

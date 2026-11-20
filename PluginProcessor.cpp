@@ -148,9 +148,10 @@ std::size_t AudioPluginAudioProcessor::getPairedDeviceCount() const {
     return network_server.pairingToken().deviceTokenCount();
 }
 
-void AudioPluginAudioProcessor::forgetPairedDevices() {
-    network_server.pairingToken().forgetDeviceTokens();
+bool AudioPluginAudioProcessor::forgetPairedDevices() {
+    const auto stored = network_server.pairingToken().forgetDeviceTokens();
     triggerAsyncUpdate();
+    return stored;
 }
 
 bool AudioPluginAudioProcessor::isNetworkRunning() const noexcept {
@@ -159,6 +160,11 @@ bool AudioPluginAudioProcessor::isNetworkRunning() const noexcept {
 
 // Paired phones must survive a plugin restart, otherwise every relaunch would
 // need a fresh QR scan. Lives beside the other per-user app data.
+//
+// Every processor instance points at this same file, so PairingToken re-reads it
+// before each read and each read-modify-write instead of trusting its own copy:
+// a token issued by another instance (or another host process) must not be
+// dropped when this one rewrites the file.
 static juce::String deviceTokenFilePath() {
     const auto directory = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
                                .getChildFile("MiniMetersMobile");

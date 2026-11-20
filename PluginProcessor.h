@@ -106,7 +106,8 @@ public:
     std::size_t getConnectedClientCount() const;
     std::size_t getPairedDeviceCount() const;
     /** Revokes every issued device token, forcing a fresh QR scan per phone. */
-    void forgetPairedDevices();
+    /** Returns false when the token file could not be rewritten. */
+    bool forgetPairedDevices();
     bool isNetworkRunning() const noexcept;
 
     WebSocketServer& getWebSocketServer() noexcept { return network_server; }

@@ -107,16 +107,20 @@ public:
             }
 
             const std::size_t channels = block->channels;
-            if (static_cast<std::size_t>(destination.samplesPerChannel) + block->samplesPerChannel
-                > maxSamplesPerChannel)
+            // The aggregate is reported in `uint16_t`, so the destination must
+            // stop before the count wraps: two 32768-sample blocks fit 65536
+            // samples but would report zero. Leave the next block queued.
+            const std::size_t aggregate = static_cast<std::size_t>(destination.samplesPerChannel)
+                                          + block->samplesPerChannel;
+            if (aggregate > maxSamplesPerChannel
+                || aggregate > std::numeric_limits<std::uint16_t>::max())
                 break;
 
             std::memcpy(destination.samples.data()
                             + static_cast<std::size_t>(destination.samplesPerChannel) * channels,
                         block->samples.data(),
                         static_cast<std::size_t>(block->samplesPerChannel) * channels * sizeof(float));
-            destination.samplesPerChannel = static_cast<std::uint16_t>(
-                destination.samplesPerChannel + block->samplesPerChannel);
+            destination.samplesPerChannel = static_cast<std::uint16_t>(aggregate);
             destination.timestampMilliseconds = block->timestampMilliseconds;
 
             endRead();

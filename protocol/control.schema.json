@@ -5,11 +5,12 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "version", "token"],
+      "required": ["type", "version"],
+      "anyOf": [{ "required": ["token"] }, { "required": ["deviceToken"] }],
       "properties": {
         "type": { "const": "authenticate" },
         "version": { "const": 1 },
-        "token": { "type": "string", "minLength": 1 },
+        "token": { "type": "string" },
         "deviceToken": { "type": "string", "minLength": 1 }
       }
     },

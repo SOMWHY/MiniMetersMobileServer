@@ -49,11 +49,16 @@ std::chrono::seconds PairingToken::remaining() const {
 
 std::string PairingToken::issueDeviceToken() {
     std::lock_guard lock(mutex);
+    // Read-modify-write: another instance may have issued tokens since we last
+    // looked, and rewriting the file from our own list would drop them.
+    loadDeviceTokens();
     auto issued = makeToken();
     deviceTokens.push_back(issued);
     // Oldest first: a phone that has not connected in ages is the one to drop.
     if (deviceTokens.size() > maxDeviceTokens)
-        deviceTokens.erase(deviceTokens.begin());
+        deviceTokens.erase(deviceTokens.begin(),
+                           deviceTokens.begin()
+                               + static_cast<std::ptrdiff_t>(deviceTokens.size() - maxDeviceTokens));
 
     persistDeviceTokens(deviceTokens);
     return issued;
@@ -64,18 +69,21 @@ bool PairingToken::validateDeviceToken(const std::string& candidate) const {
         return false;
 
     std::lock_guard lock(mutex);
+    // Tokens issued by another instance of this plugin live only in the file.
+    loadDeviceTokens();
     return std::find(deviceTokens.begin(), deviceTokens.end(), candidate) != deviceTokens.end();
 }
 
 std::size_t PairingToken::deviceTokenCount() const {
     std::lock_guard lock(mutex);
+    loadDeviceTokens();
     return deviceTokens.size();
 }
 
-void PairingToken::forgetDeviceTokens() {
+bool PairingToken::forgetDeviceTokens() {
     std::lock_guard lock(mutex);
     deviceTokens.clear();
-    persistDeviceTokens(deviceTokens);
+    return persistDeviceTokens(deviceTokens);
 }
 
 bool PairingToken::authorize(const std::string& qrToken, const std::string& deviceToken) const {
@@ -84,12 +92,15 @@ bool PairingToken::authorize(const std::string& qrToken, const std::string& devi
 
     std::lock_guard lock(mutex);
     const auto now = Clock::now();
-    if (!qrToken.empty() && qrToken == token && now < expiresAt)
+    if (qrToken.empty())
+        return false;
+
+    // The live token keeps its grace window too: a scan that started a moment
+    // before expiry, and lands before the next refresh, must still connect.
+    if (qrToken == token && now < expiresAt + grace)
         return true;
 
-    // Grace window for the token that just rotated.
-    return !qrToken.empty() && qrToken == previousToken
-        && now < previousExpiresAt + grace;
+    return qrToken == previousToken && now < previousExpiresAt + grace;
 }
 
 std::string PairingToken::makeToken() const {
@@ -106,11 +117,13 @@ std::string PairingToken::makeToken() const {
     return result;
 }
 
-void PairingToken::loadDeviceTokens() {
-    deviceTokens.clear();
+void PairingToken::loadDeviceTokens() const {
+    // With no store the in-memory list *is* the state: clearing it here would
+    // wipe tokens we just issued.
     if (storePath.empty())
         return;
 
+    deviceTokens.clear();
     std::ifstream stream(storePath);
     std::string line;
     while (std::getline(stream, line) && deviceTokens.size() < maxDeviceTokens) {
@@ -121,16 +134,20 @@ void PairingToken::loadDeviceTokens() {
     }
 }
 
-void PairingToken::persistDeviceTokens(const std::vector<std::string>& tokens) const {
+bool PairingToken::persistDeviceTokens(const std::vector<std::string>& tokens) const {
     if (storePath.empty())
-        return;
+        return true;
 
-    // Failures are silent on purpose: a read-only data directory must not stop
-    // the plugin from streaming, it only means phones re-scan after a restart.
+    // A failure here must not stop the plugin from streaming, but revoking is a
+    // security action: the caller has to know the phones are only forgotten
+    // until the next restart.
     std::ofstream stream(storePath, std::ios::trunc);
     if (!stream)
-        return;
+        return false;
 
     for (const auto& entry : tokens)
         stream << entry << '\n';
+
+    stream.flush();
+    return static_cast<bool>(stream);
 }
