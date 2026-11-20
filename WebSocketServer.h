@@ -15,7 +15,9 @@ class WebSocketServer {
 public:
     static constexpr int defaultPort = 8422;
 
-    explicit WebSocketServer(AudioBlockQueue& audioQueue, int port = defaultPort);
+    explicit WebSocketServer(AudioBlockQueue& audioQueue,
+                             int port = defaultPort,
+                             std::string deviceStorePath = {});
     ~WebSocketServer();
 
     bool start();
@@ -37,6 +39,8 @@ private:
     AudioBlockQueue& audioQueue;
     const int port;
     PairingToken token;
+    /** Audio thread writes into the queue; this thread drains it in one message. */
+    AudioBlock coalescedBlock;
     std::atomic<bool> running { false };
     juce::StreamingSocket listener;
     std::thread acceptThread;

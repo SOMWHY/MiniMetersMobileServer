@@ -144,15 +144,35 @@ std::size_t AudioPluginAudioProcessor::getConnectedClientCount() const {
     return network_server.connectedClientCount();
 }
 
+std::size_t AudioPluginAudioProcessor::getPairedDeviceCount() const {
+    return network_server.pairingToken().deviceTokenCount();
+}
+
+void AudioPluginAudioProcessor::forgetPairedDevices() {
+    network_server.pairingToken().forgetDeviceTokens();
+    triggerAsyncUpdate();
+}
+
 bool AudioPluginAudioProcessor::isNetworkRunning() const noexcept {
     return network_server.isRunning();
+}
+
+// Paired phones must survive a plugin restart, otherwise every relaunch would
+// need a fresh QR scan. Lives beside the other per-user app data.
+static juce::String deviceTokenFilePath() {
+    const auto directory = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                               .getChildFile("MiniMetersMobile");
+    directory.createDirectory();
+    return directory.getChildFile("device_tokens.txt").getFullPathName();
 }
 
 AudioPluginAudioProcessor::AudioPluginAudioProcessor()
     : AudioProcessor(BusesProperties()
                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true))
-    , network_server(network_audio_queue) {
+    , network_server(network_audio_queue,
+                     WebSocketServer::defaultPort,
+                     deviceTokenFilePath().toStdString()) {
     server_state = StateError;
     m_uuid_hash = compute_hash(get_uuid());
     ipc_setup();

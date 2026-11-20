@@ -29,6 +29,13 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor(AudioPluginAudi
         juce::SystemClipboard::copyTextToClipboard(processorRef.getPairingPayload());
     };
 
+    addAndMakeVisible(m_forget_devices_button);
+    m_forget_devices_button.onClick = [&]() {
+        // Revokes every phone that paired with an earlier QR code.
+        processorRef.forgetPairedDevices();
+        repaint();
+    };
+
     setSize(800, 350);
     updatePairingCode();
     startTimerHz(1);
@@ -66,7 +73,8 @@ void AudioPluginAudioProcessorEditor::paint(juce::Graphics& g) {
         : "Audio source: another instance";
     g.drawText(status, 280, 280, getWidth() - 305, 24, juce::Justification::left);
     g.drawText("Network: " + juce::String(processorRef.isNetworkRunning() ? "listening" : "unavailable")
-                   + "  Clients: " + juce::String(static_cast<int>(processorRef.getConnectedClientCount())),
+                   + "  Clients: " + juce::String(static_cast<int>(processorRef.getConnectedClientCount()))
+                   + "  Paired: " + juce::String(static_cast<int>(processorRef.getPairedDeviceCount())),
                280,
                300,
                getWidth() - 305,
@@ -78,6 +86,7 @@ void AudioPluginAudioProcessorEditor::resized() {
     m_reset_button.setBounds(juce::Rectangle<int>(getWidth() - 100, 16, 75, 28));
     m_refresh_pairing_button.setBounds(juce::Rectangle<int>(280, 315, 180, 30));
     m_copy_pairing_button.setBounds(juce::Rectangle<int>(470, 315, 160, 30));
+    m_forget_devices_button.setBounds(juce::Rectangle<int>(640, 315, 140, 30));
 }
 
 void AudioPluginAudioProcessorEditor::timerCallback() {

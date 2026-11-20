@@ -104,6 +104,9 @@ public:
     juce::String getPairingPayload() const;
     int getPairingSecondsRemaining() const;
     std::size_t getConnectedClientCount() const;
+    std::size_t getPairedDeviceCount() const;
+    /** Revokes every issued device token, forcing a fresh QR scan per phone. */
+    void forgetPairedDevices();
     bool isNetworkRunning() const noexcept;
 
     WebSocketServer& getWebSocketServer() noexcept { return network_server; }

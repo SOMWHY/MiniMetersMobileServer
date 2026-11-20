@@ -9,18 +9,31 @@
       "properties": {
         "type": { "const": "authenticate" },
         "version": { "const": 1 },
-        "token": { "type": "string", "minLength": 1 }
+        "token": { "type": "string", "minLength": 1 },
+        "deviceToken": { "type": "string", "minLength": 1 }
       }
     },
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "version", "sampleFormat"],
+      "required": ["type", "version", "sampleFormat", "deviceToken"],
       "properties": {
         "type": { "const": "authenticated" },
         "version": { "const": 1 },
         "sampleFormat": { "const": "f32le" },
-        "channels": { "type": "integer", "minimum": 1, "maximum": 2 }
+        "channels": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "deviceToken": { "type": "string", "minLength": 1 },
+        "heartbeatIntervalMs": { "type": "integer", "minimum": 100, "maximum": 60000 }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "version", "timestampMs"],
+      "properties": {
+        "type": { "const": "heartbeat" },
+        "version": { "const": 1 },
+        "timestampMs": { "type": "integer", "minimum": 0 }
       }
     },
     {

@@ -1,6 +1,6 @@
 # Binary audio frame
 
-Audio is sent as one binary WebSocket frame per DAW audio block. All integer fields use little-endian byte order. Samples are IEEE-754 little-endian `float32` values, interleaved by channel.
+Audio is sent as one binary WebSocket frame per network tick. All integer fields use little-endian byte order. Samples are IEEE-754 little-endian `float32` values, interleaved by channel.
 
 ## Header
 
@@ -19,4 +19,10 @@ Audio is sent as one binary WebSocket frame per DAW audio block. All integer fie
 
 The payload begins at offset `32` and contains `channels * samplesPerChannel` samples.
 
-For stereo audio, samples are ordered `L0, R0, L1, R1, ...`. A mono input is represented as one channel. The frame represents the same block that is written to the existing MiniMeters shared-memory path.
+For stereo audio, samples are ordered `L0, R0, L1, R1, ...`. A mono input is represented as one channel.
+
+## Backpressure
+
+The audio thread writes one block per DAW callback (~10 ms at 48 kHz with a 512-sample block) into a four-slot queue. The network thread polls the queue and **coalesces every queued block into a single frame**, so one frame may carry several DAW blocks as consecutive samples. `samplesPerChannel` is the total for that frame and `timestamp` is the newest block's.
+
+Sending one block per tick would deliver roughly a third of realtime at a 30 Hz tick, so a receiver should size its buffer expectations from `samplesPerChannel` and never assume a frame equals one DAW block.

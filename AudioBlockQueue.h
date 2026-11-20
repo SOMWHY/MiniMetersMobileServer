@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <limits>
 
 struct AudioBlock {
@@ -72,6 +73,57 @@ public:
     void endRead() noexcept {
         const auto read = readIndex.load(std::memory_order_relaxed);
         readIndex.store((read + 1) % capacity, std::memory_order_release);
+    }
+
+    /**
+     * Concatenates every queued block into `destination` and consumes them all.
+     *
+     * The network thread polls far slower than the audio thread writes (30 Hz vs
+     * ~90 blocks/s at 48 kHz), so sending one block per tick would deliver about
+     * a third of realtime and the phone could never keep its buffer full.
+     * Coalescing keeps the stream at realtime with one message per tick.
+     *
+     * Returns the number of blocks consumed (0 when the queue is empty).
+     * `maxSamplesPerChannel` bounds the destination capacity.
+     */
+    std::size_t readAll(AudioBlock& destination, std::size_t maxSamplesPerChannel) noexcept {
+        destination.channels = 0;
+        destination.sampleRate = 0;
+        destination.samplesPerChannel = 0;
+        destination.timestampMilliseconds = 0;
+
+        std::size_t consumed = 0;
+        for (;;) {
+            const auto* block = beginRead();
+            if (block == nullptr || block->channels == 0)
+                break;
+
+            if (destination.channels == 0) {
+                destination.channels = block->channels;
+                destination.sampleRate = block->sampleRate;
+            } else if (destination.channels != block->channels
+                       || destination.sampleRate != block->sampleRate) {
+                break;
+            }
+
+            const std::size_t channels = block->channels;
+            if (static_cast<std::size_t>(destination.samplesPerChannel) + block->samplesPerChannel
+                > maxSamplesPerChannel)
+                break;
+
+            std::memcpy(destination.samples.data()
+                            + static_cast<std::size_t>(destination.samplesPerChannel) * channels,
+                        block->samples.data(),
+                        static_cast<std::size_t>(block->samplesPerChannel) * channels * sizeof(float));
+            destination.samplesPerChannel = static_cast<std::uint16_t>(
+                destination.samplesPerChannel + block->samplesPerChannel);
+            destination.timestampMilliseconds = block->timestampMilliseconds;
+
+            endRead();
+            ++consumed;
+        }
+
+        return consumed;
     }
 
 private:
