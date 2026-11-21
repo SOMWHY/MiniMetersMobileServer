@@ -1,3 +1,5 @@
+**English** · [简体中文](control_messages.zh-CN.md)
+
 # Control messages
 
 All control messages are UTF-8 JSON text WebSocket frames.

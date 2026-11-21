@@ -1,3 +1,5 @@
+**English** · [简体中文](README.zh-CN.md)
+
 # MiniMetersMobile
 
 A JUCE audio server that streams raw audio from your DAW (or from its own standalone build) to the
@@ -88,3 +90,8 @@ version and the minimum app version it accepts; see `docs/RELEASING.md`.
 GNU General Public License v3 — see [`LICENSE`](LICENSE). Because this project uses JUCE under its
 GPLv3 option, the corresponding source must stay available: that is this repository.
 Third-party components: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) — in particular the protocol section before touching
+anything under `protocol/`.

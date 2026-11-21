@@ -1,3 +1,5 @@
+**English** · [简体中文](INSTALL.zh-CN.md)
+
 # Installing MiniMetersMobile (Windows)
 
 This zip contains three builds of the same audio server:
