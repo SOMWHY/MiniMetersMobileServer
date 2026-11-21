@@ -1,3 +1,5 @@
+**English** · [简体中文](README.zh-CN.md)
+
 # MiniMeters Mobile Protocol
 
 This directory is the protocol contract shared by the plugin and the future React Native client.

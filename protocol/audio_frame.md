@@ -1,3 +1,5 @@
+**English** · [简体中文](audio_frame.zh-CN.md)
+
 # Binary audio frame
 
 Audio is sent as one binary WebSocket frame per network tick. All integer fields use little-endian byte order. Samples are IEEE-754 little-endian `float32` values, interleaved by channel.
