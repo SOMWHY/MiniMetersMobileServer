@@ -15,11 +15,17 @@ This directory is the protocol contract shared by the plugin and the future Reac
 
 1. Scan the pairing payload from the plugin editor.
 2. Connect to `ws://<address>:<port>/ws`.
-3. Send an `authenticate` control message containing the pairing token.
-4. Receive `authenticated` or `error`.
-5. Receive binary audio frames until disconnect.
+3. Send an `authenticate` control message containing the QR token (and the `deviceToken` once one has been issued).
+4. Receive `authenticated` (carrying the `deviceToken`) or `error`.
+5. Receive binary audio frames until disconnect; `heartbeat` messages arrive while no audio flows.
 
-The pairing token is short-lived and only authenticates new connections. Expiration does not terminate already authenticated connections.
+The QR token is short-lived and only authenticates *new* pairings. On the first successful handshake the server issues a long-lived **device token**; the phone stores it and presents it on every later connect, so an expired QR code never disconnects a paired phone. Device tokens are revoked by the editor's **Forget devices** button.
+
+Binary frames may carry more than one DAW block: the server coalesces everything queued between ticks. See `audio_frame.md`.
+
+## Audio source
+
+The plugin is a pass-through: it forwards whatever reaches `processBlock`. In a DAW that is the host's audio. In the **standalone** build the source is the standalone's audio input or its “Audio input / Play file” settings — with no input and no file it still streams (silence), so the client connects and draws flat meters.
 
 ## Desktop test client
 

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 env:
   BUILD_TYPE: Release
@@ -19,7 +22,7 @@ jobs:
       - name: Checkout repository and submodules
         uses: actions/checkout@v3
         with:
-          ref: master
+          ref: ${{ github.ref }}
           submodules: recursive
 
       - name: Update Submodules
@@ -47,7 +50,7 @@ jobs:
       - name: Checkout repository and submodules
         uses: actions/checkout@v3
         with:
-          ref: master
+          ref: ${{ github.ref }}
           submodules: recursive remote
 
       - name: Update Submodules
@@ -68,13 +71,13 @@ jobs:
         run: b2 sync "./releases" "b2://MiniMetersServerBuilds/${{github.run_number}}-${{github.sha}}"
 
   windows:
-    runs-on: [ self-hosted, windows]
+    runs-on: [ self-hosted, windows ]
     name: Windows
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v3
         with:
-          ref: master
+          ref: ${{ github.ref }}
           submodules: recursive remote
 
       - name: Update Submodules
@@ -94,3 +97,55 @@ jobs:
           B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPKEY_ID }}
           B2_APPLICATION_KEY: ${{ secrets.B2_APPKEY }}
         run: ./b2-windows.exe sync "./releases" "b2://MiniMetersServerBuilds/${{github.run_number}}-${{github.sha}}"
+
+      # The Windows zip is the only publishable artefact today: macOS and Linux builds exist but
+      # have not had a verification pass, so they stay on B2 as CI artefacts only.
+      - name: Upload release artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: releases/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ windows ]
+    runs-on: [ self-hosted, windows ]
+    permissions:
+      contents: write
+    steps:
+      - name: Download release artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: dist
+
+      - name: Checksum
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -Filter *.zip | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Out-File -Append -Encoding ascii dist\SHA256SUMS.txt
+          }
+          Get-Content dist\SHA256SUMS.txt
+
+      - name: Check out release notes
+        uses: actions/checkout@v3
+        with:
+          sparse-checkout: docs/
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          $notes = "docs/releases/$tag.md"
+          $notesArgs = if (Test-Path $notes) { @('--notes-file', $notes) } else { @('--generate-notes') }
+          gh release create $tag `
+            (Get-ChildItem dist\*.zip).FullName `
+            'dist\SHA256SUMS.txt' `
+            --title "MiniMetersMobile $version" `
+            @notesArgs

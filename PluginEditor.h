@@ -18,6 +18,7 @@ private:
     juce::TextButton m_reset_button { "Reset" };
     juce::TextButton m_refresh_pairing_button { "Refresh pairing" };
     juce::TextButton m_copy_pairing_button { "Copy pairing" };
+    juce::TextButton m_forget_devices_button { "Forget devices" };
 
     AudioPluginAudioProcessor& processorRef;
     juce::Image pairingQrCode;

@@ -10,8 +10,38 @@
 #include <string_view>
 #include <vector>
 
+#if JUCE_WINDOWS
+ #include <winsock2.h>
+#else
+ #include <netinet/in.h>
+ #include <netinet/tcp.h>
+#endif
+
 namespace {
 using json = nlohmann::json;
+
+/**
+ * Stop the stack from batching our writes.
+ *
+ * This JUCE build predates `StreamingSocket::setNoDelay`, so the option goes on
+ * the raw handle. Nagle holds a small write until the previous one is ACKed; on
+ * a 100 Hz audio stream of ~2 KB messages that is tens of milliseconds of extra
+ * latency per packet, and the listener hears it as the meters trailing the sound.
+ * Each socket has a single writer, so there is nothing worth coalescing.
+ */
+bool disableNagleDelay(juce::StreamingSocket& socket) {
+    const auto handle = socket.getRawSocketHandle();
+    if (handle < 0)
+        return false;
+
+    const int enabled = 1;
+#if JUCE_WINDOWS
+    return ::setsockopt(handle, IPPROTO_TCP, TCP_NODELAY,
+                        reinterpret_cast<const char*>(&enabled), sizeof(enabled)) == 0;
+#else
+    return ::setsockopt(handle, IPPROTO_TCP, TCP_NODELAY, &enabled, sizeof(enabled)) == 0;
+#endif
+}
 
 std::uint32_t rotateLeft(std::uint32_t value, int bits) {
     return (value << bits) | (value >> (32 - bits));
@@ -115,7 +145,11 @@ std::uint64_t nowMilliseconds() {
 class WebSocketServer::ClientSession : public std::enable_shared_from_this<ClientSession> {
 public:
     ClientSession(std::unique_ptr<juce::StreamingSocket> client, PairingToken& pairingToken)
-        : socket(std::move(client)), token(pairingToken) {}
+        : socket(std::move(client)), token(pairingToken)
+    {
+        if (socket != nullptr)
+            disableNagleDelay(*socket);
+    }
 
     ~ClientSession() { stopAndJoin(); }
 
@@ -156,6 +190,12 @@ public:
             socket->close();
         }
         return sent;
+    }
+
+    bool sendControl(const std::string& text) {
+        if (stopping.load(std::memory_order_acquire) || !authenticated.load(std::memory_order_acquire))
+            return false;
+        return sendText(text);
     }
 
 private:
@@ -315,12 +355,29 @@ private:
             const auto message = json::parse(payload.begin(), payload.end());
             if (message.value("type", "") != "authenticate")
                 return false;
-            if (message.value("version", 0) != 1 || !token.validate(message.value("token", ""))) {
+
+            const auto qrToken = message.value("token", std::string {});
+            const auto deviceToken = message.value("deviceToken", std::string {});
+
+            if (message.value("version", 0) != 1 || !token.authorize(qrToken, deviceToken)) {
                 sendText(R"({"type":"error","code":"invalid_token"})");
                 return false;
             }
+
+            // A phone that scanned the QR code gets its own long-lived
+            // credential; a returning phone already presents one and keeps it.
+            auto issuedDeviceToken = deviceToken;
+            if (!token.validateDeviceToken(issuedDeviceToken))
+                issuedDeviceToken = token.issueDeviceToken();
+
             authenticated.store(true, std::memory_order_release);
-            sendText(R"({"type":"authenticated","version":1,"sampleFormat":"f32le"})");
+            sendText(json {
+                { "type", "authenticated" },
+                { "version", 1 },
+                { "sampleFormat", "f32le" },
+                { "deviceToken", issuedDeviceToken },
+                { "heartbeatIntervalMs", 5000 },
+            }.dump());
             return true;
         } catch (...) {
             return false;
@@ -352,8 +409,10 @@ private:
     std::string pendingBytes;
 };
 
-WebSocketServer::WebSocketServer(AudioBlockQueue& queue, int serverPort)
-    : audioQueue(queue), port(serverPort) {}
+WebSocketServer::WebSocketServer(AudioBlockQueue& queue, int serverPort, std::string deviceStorePath)
+    : audioQueue(queue)
+    , port(serverPort)
+    , token(PairingToken(std::chrono::minutes(10), std::move(deviceStorePath))) {}
 
 WebSocketServer::~WebSocketServer() {
     stop();
@@ -411,8 +470,13 @@ void WebSocketServer::acceptLoop() {
 }
 
 void WebSocketServer::broadcastLoop() {
-    constexpr auto broadcastInterval = std::chrono::milliseconds(33);
+    // The audio thread pushes a block roughly every 10 ms; polling at 10 ms keeps
+    // the latency of one block while coalescing everything that piled up.
+    constexpr auto broadcastInterval = std::chrono::milliseconds(10);
+    constexpr auto heartbeatInterval = std::chrono::milliseconds(5000);
+
     auto nextBroadcast = std::chrono::steady_clock::now();
+    auto nextHeartbeat = std::chrono::steady_clock::now() + heartbeatInterval;
 
     while (running.load(std::memory_order_acquire)) {
         const auto now = std::chrono::steady_clock::now();
@@ -421,8 +485,24 @@ void WebSocketServer::broadcastLoop() {
             continue;
         }
 
-        const auto* block = audioQueue.beginLatestRead();
-        if (block == nullptr) {
+        const auto blockCount = audioQueue.readAll(coalescedBlock, AudioBlock::maxSamplesPerChannel);
+
+        if (blockCount == 0) {
+            // Silence on the wire used to be indistinguishable from a dead link;
+            // a heartbeat lets the phone notice a broken socket within seconds.
+            if (now >= nextHeartbeat) {
+                const auto heartbeat = json {
+                    { "type", "heartbeat" },
+                    { "version", 1 },
+                    { "timestampMs", nowMilliseconds() },
+                }.dump();
+
+                std::lock_guard lock(clientsMutex);
+                for (auto& client : clients)
+                    client->sendControl(heartbeat);
+                nextHeartbeat = now + heartbeatInterval;
+            }
+
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
             continue;
         }
@@ -430,13 +510,15 @@ void WebSocketServer::broadcastLoop() {
         std::lock_guard lock(clientsMutex);
         for (auto& client : clients)
             if (client->isAuthenticated())
-                client->sendBinary(*block);
+                client->sendBinary(coalescedBlock);
         clients.erase(std::remove_if(clients.begin(), clients.end(), [](const auto& client) {
                           return client->isStopped();
                       }),
                       clients.end());
-        audioQueue.endRead();
+
         nextBroadcast = std::chrono::steady_clock::now() + broadcastInterval;
+        if (nextHeartbeat < nextBroadcast)
+            nextHeartbeat = nextBroadcast + heartbeatInterval;
     }
 }
 
