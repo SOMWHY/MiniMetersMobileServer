@@ -10,13 +10,13 @@ cmake --build . --config Release || exit /b
 cd ..
 echo "Copying to zip"
 
-mkdir .\releases
+if not exist .\releases mkdir .\releases
 
-Xcopy /E /I .\build\MiniMetersServer_artefacts\Release\VST3\MiniMetersServer.vst3 .\releases\MiniMetersServer.vst3
-copy .\build\MiniMetersServer_artefacts\Release\CLAP\MiniMetersServer.clap .\releases
+Xcopy /E /I .\build\MiniMetersMobile_artefacts\Release\VST3\MiniMetersMobile.vst3 .\releases\MiniMetersMobile.vst3
+copy .\build\MiniMetersMobile_artefacts\Release\CLAP\MiniMetersMobile.clap .\releases
 cd releases
-tar.exe -a -c -f plugin-windows.zip MiniMetersServer.clap MiniMetersServer.vst3
+tar.exe -a -c -f plugin-windows.zip MiniMetersMobile.clap MiniMetersMobile.vst3
 cd ..
 
-if exist .\releases\MiniMetersServer.vst3 rmdir /s /Q .\releases\MiniMetersServer.vst3
-if exist .\releases\MiniMetersServer.clap del .\releases\MiniMetersServer.clap
+if exist .\releases\MiniMetersMobile.vst3 rmdir /s /Q .\releases\MiniMetersMobile.vst3
+if exist .\releases\MiniMetersMobile.clap del .\releases\MiniMetersMobile.clap
