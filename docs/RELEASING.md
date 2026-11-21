@@ -31,17 +31,20 @@ Produces `releases/MiniMetersMobile-<version>-windows.zip` containing:
 MiniMetersMobile.vst3/         VST3 bundle (directory)
 MiniMetersMobile.clap          CLAP
 MiniMetersMobile.exe           standalone
+install.cmd                    one-click installer (elevates)
+Install-MiniMetersMobile.ps1   what install.cmd runs; supports -Uninstall / -SkipFirewall
 INSTALL.md  LICENSE  SOURCE.txt  THIRD_PARTY_NOTICES.md
 ```
 
-No installer is produced on purpose: an unsigned `.exe` installer trips antivirus heuristics far
-more often than a plain zip, and the copy targets are two well-known directories.
+`install.cmd` is a plain script, not a compiled `.exe` installer: unsigned installers trip
+antivirus heuristics far more often than a script that copies two bundles into well-known
+directories. It does not touch the registry and `-Uninstall` reverses everything it did.
 
 ## 3. Verify before publishing
 
-1. **Clean machine test** — copy the zip to a Windows box that has never had the plugin, follow
-   `INSTALL.md` verbatim, confirm a DAW (at minimum two of Ableton / FL / Reaper / Bitwig) scans
-   and opens the UI showing the new version.
+1. **Clean machine test** — copy the zip to a Windows box that has never had the plugin, run
+   `install.cmd` (and once by hand per `INSTALL.md` to keep the manual path honest), confirm a DAW
+   (at minimum two of Ableton / FL / Reaper / Bitwig) scans and opens the UI showing the new version.
 2. **CLAP host** — Reaper or Bitwig loads `MiniMetersMobile.clap`.
 3. **Standalone** — starts, `Options` lists audio devices, phone connects.
 4. **Validator** (recommended) — run `pluginval` at strictness 5+ against the VST3. A crash there
@@ -95,7 +98,8 @@ The repository must stay public. Losing that breaks the licence for every distri
 
 ```
 [ ] CMakeLists.txt version bumped (only place a version lives)
-[ ] build_windows.cmd produced a zip with 3 binaries + 4 docs
+[ ] build_windows.cmd produced a zip with 3 binaries + installer + 4 docs
+[ ] unzip -l confirms it is a real zip (not a tar) and the version inside moduleinfo.json matches
 [ ] clean-machine install test passed in at least two DAWs
 [ ] CLAP loads in a CLAP host
 [ ] standalone runs, phone connects
