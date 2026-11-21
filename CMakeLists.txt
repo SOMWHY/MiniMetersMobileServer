@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(MiniMetersMobile VERSION 1.0.9)
+project(MiniMetersMobile VERSION 1.0.10)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,9 +22,7 @@ add_subdirectory(JUCE)
 add_subdirectory(clap-juce-extensions EXCLUDE_FROM_ALL)
 
 juce_add_plugin(MiniMetersMobile
-        COMPANY_NAME Direct
-        COMPANY_WEBSITE https://minimeters.app/
-        COMPANY_EMAIL contact@directmusic.me
+        COMPANY_NAME somwhy
          BUNDLE_ID com.josephlyncheski.MiniMetersMobile
         VST3_CATEGORIES Fx Tools
         AU_MAIN_TYPE kAudioUnitType_Effect
