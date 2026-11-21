@@ -32,6 +32,11 @@ copy /Y .\build\MiniMetersMobile_artefacts\Release\Standalone\MiniMetersMobile.e
 for %%f in (INSTALL.md LICENSE THIRD_PARTY_NOTICES.md) do (
     if exist "%%f" copy /Y "%%f" "%STAGE%" >nul || exit /b 1
 )
+
+:: Installer: install.cmd is the double-click entry point, the .ps1 does the work.
+for %%f in (install.cmd Install-MiniMetersMobile.ps1) do (
+    if exist "installer\%%f" copy /Y "installer\%%f" "%STAGE%" >nul || exit /b 1
+)
 > "%STAGE%\SOURCE.txt" echo MiniMetersMobile %VERSION% - corresponding source
 >> "%STAGE%\SOURCE.txt" echo https://github.com/SOMWHY/MiniMetersMobileServer
 >> "%STAGE%\SOURCE.txt" echo.
@@ -41,7 +46,9 @@ for %%f in (INSTALL.md LICENSE THIRD_PARTY_NOTICES.md) do (
 
 echo Packing
 cd "%STAGE%"
-tar.exe -a -c -f "..\MiniMetersMobile-%VERSION%-windows.zip" * || exit /b 1
+:: Must call the Windows bsdtar explicitly: a GNU tar earlier on PATH ignores -a and
+:: writes a plain POSIX tar, which Windows Explorer cannot open.
+"%SystemRoot%\System32\tar.exe" -a -c -f "..\MiniMetersMobile-%VERSION%-windows.zip" * || exit /b 1
 cd ..\..
 
 echo Done: releases\MiniMetersMobile-%VERSION%-windows.zip

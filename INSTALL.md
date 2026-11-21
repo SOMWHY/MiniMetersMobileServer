@@ -4,6 +4,7 @@ This zip contains three builds of the same audio server:
 
 | File | What it is |
 | --- | --- |
+| `install.cmd` | One-click installer (asks for administrator rights) |
 | `MiniMetersMobile.vst3\` | VST3 plugin (folder — it is a bundle, not a mistake) |
 | `MiniMetersMobile.clap` | CLAP plugin |
 | `MiniMetersMobile.exe` | Standalone application, no DAW needed |
@@ -13,6 +14,20 @@ and some antivirus products flag them. Verify the download with `SHA256SUMS.txt`
 if you want certainty that the file was not modified in transit.
 
 ## Install the plugins
+
+### Easiest: run the installer
+
+Double-click **`install.cmd`** and accept the administrator prompt. It copies the VST3 and CLAP
+bundles into the folders below, adds the inbound firewall rule the phone needs, and tells you to
+rescan your DAW. Nothing else is installed and no registry keys are written.
+
+To remove it again:
+
+```bat
+ powershell -ExecutionPolicy Bypass -File Install-MiniMetersMobile.ps1 -Uninstall
+```
+
+### By hand
 
 1. Copy the **whole** `MiniMetersMobile.vst3` folder to:
    ```
@@ -24,6 +39,8 @@ if you want certainty that the file was not modified in transit.
    ```
    Create the `CLAP` folder if it does not exist. Both operations need administrator rights.
 3. In your DAW, rescan plugins (or restart the DAW).
+4. Allow inbound TCP **8422** in Windows Firewall, private networks only, or the plugin will show
+   `Network: unavailable` and the phone will never connect.
 
 Typical paths per host:
 
