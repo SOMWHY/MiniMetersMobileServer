@@ -1,0 +1,64 @@
+MiniMetersMobile — copyright and modification notice
+====================================================
+
+This file records who owns what. `LICENSE` holds the licence text itself and is
+reproduced verbatim; nothing is appended to it, because the GNU GPL asks that the
+licence document be copied unmodified.
+
+
+Original work
+-------------
+MiniMetersServer
+Copyright (C) 2022 Joseph Lyncheski
+https://github.com/direct-audio/MiniMetersServer
+
+This repository is a fork of that project and retains its full commit history. The
+upstream tip carried into the fork is commit 6a21e02 ("Remove speex and miniaudio as
+dependencies"); everything reachable from it is upstream work.
+
+
+Modifications
+-------------
+Modifications Copyright (C) 2026 SOMWHY
+First modified: 2026-11-21
+
+The fork changes pairing and transport, realtime streaming, WebSocket robustness,
+plugin identity and editor layout, plugin packaging, and adds a Windows installer
+plus Chinese documentation. The authoritative record is the commit list:
+
+    git log --oneline 6a21e02..HEAD
+
+The Credits section of `README.md` summarises those changes.
+
+
+Licence
+-------
+This program is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License, version 3, as published by the Free Software
+Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+The full licence text is in `LICENSE`. Third-party components, and the licence
+option each is used under, are listed in `THIRD_PARTY_NOTICES.md`.
+
+
+---
+
+MiniMetersMobile —— 版权与修改声明
+
+原始作品：MiniMetersServer，Copyright (C) 2022 Joseph Lyncheski
+（https://github.com/direct-audio/MiniMetersServer）。本仓库是该项目的 fork，
+保留了完整提交历史；引入 fork 时的上游 tip 为 `6a21e02`（"Remove speex and
+miniaudio as dependencies"），从该提交可达的部分全部属于上游作品。
+
+修改部分：Copyright (C) 2026 SOMWHY，首次修改日期 2026-11-21。修改范围包括配对与
+传输、实时流、WebSocket 健壮性、插件标识与编辑器布局、插件打包，并新增 Windows 安装
+器与中文文档。准确记录以 `git log --oneline 6a21e02..HEAD` 为准，摘要见
+`README.md` 的「致谢」一节。
+
+本程序为自由软件，按 GNU 通用公共许可证第 3 版发布；不提供任何担保。完整许可证文本见
+`LICENSE`（逐字保留，未作修改）。第三方组件及其使用的许可选项见
+`THIRD_PARTY_NOTICES.md`。
