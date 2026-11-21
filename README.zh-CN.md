@@ -80,9 +80,31 @@ cd build-tests && ctest -C Release --output-on-failure
 改动任何字段都必须升版本号，并成对发布手机端。插件会报告自身版本以及它接受的最低手机端版本；
 细节见 `docs/RELEASING.md`。
 
+## 致谢
+
+本项目是 Joseph Lyncheski 的 [`direct-audio/MiniMetersServer`](https://github.com/direct-audio/MiniMetersServer)
+的 fork，并完整保留了上游提交历史。原始作品的版权归 Joseph Lyncheski 所有（Copyright (C) 2022），
+以 GNU GPL v3 发布；版权与修改声明记录在 [`NOTICE`](NOTICE)。
+
+相对上游 `6a21e02`，本 fork 的改动如下（完整列表以 `git log --oneline 6a21e02..HEAD` 为准）：
+
+- **配对与传输** —— 配对 token 在编辑器与 WebSocket 服务之间共享，吊销失败会如实上报而不是静默吞掉，
+  网络服务能跨 service 切换存活（`2146331`、`e1da769`、`648c3db`）。
+- **实时流** —— 广播限流到 30 Hz，所有排队 block 合并进同一帧，并关闭 Nagle 算法以免音频被 socket
+  攒包拖住（`5a7315c`、`b2c5bf7`、`fcac876`）。
+- **WebSocket 健壮性** —— 读写并发串行化，已认证的空闲连接保持存活，握手与帧校验加严（`c49116f`、
+  `6cb44b1`、`127479c`、`a986dd9`）。
+- **插件标识与界面** —— 插件 target、bundle identity 与 vendor 名改为 `MiniMetersMobile` / `somwhy`，
+  编辑器改为以大号二维码为主体、状态独立成行（`d1cbe25`、`3b1c99a`、`7803e7f`、`da28f02`）。
+- **手机端桥接** —— 二维码配对显示、桌面 WebSocket 测试客户端，以及原生配对与音频队列测试
+  （`e879f00`、`837b5cc`、`f46c6b7`）。
+- **打包** —— Windows 上的 VST3 / CLAP / standalone 构建，配一键安装器与公开校验和（`0d390bf`、
+  `07df4f4`、`91737ce`）。
+
 ## 许可
 
-GNU General Public License v3 —— 见 [`LICENSE`](LICENSE)。本项目以 JUCE 的 GPLv3 选项使用它，因此对应源码
+GNU General Public License v3 —— 见 [`LICENSE`](LICENSE)；版权与修改声明见 [`NOTICE`](NOTICE)。
+`LICENSE` 文件逐字保留原文，从不往里追加内容。本项目以 JUCE 的 GPLv3 选项使用它，因此对应源码
 必须保持可获得：也就是这个仓库。第三方组件见 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
 
 ## 参与贡献

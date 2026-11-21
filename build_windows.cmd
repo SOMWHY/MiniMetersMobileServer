@@ -29,7 +29,7 @@ copy /Y .\build\MiniMetersMobile_artefacts\Release\CLAP\MiniMetersMobile.clap "%
 copy /Y .\build\MiniMetersMobile_artefacts\Release\Standalone\MiniMetersMobile.exe "%STAGE%" >nul || exit /b 1
 
 :: Distribution paperwork: required by the GPL and by every user who hits SmartScreen.
-for %%f in (INSTALL.md LICENSE THIRD_PARTY_NOTICES.md) do (
+for %%f in (INSTALL.md LICENSE NOTICE THIRD_PARTY_NOTICES.md) do (
     if exist "%%f" copy /Y "%%f" "%STAGE%" >nul || exit /b 1
 )
 
@@ -38,9 +38,18 @@ for %%f in (install.cmd Install-MiniMetersMobile.ps1) do (
     if exist "installer\%%f" copy /Y "installer\%%f" "%STAGE%" >nul || exit /b 1
 )
 > "%STAGE%\SOURCE.txt" echo MiniMetersMobile %VERSION% - corresponding source
->> "%STAGE%\SOURCE.txt" echo https://github.com/SOMWHY/MiniMetersMobileServer
+>> "%STAGE%\SOURCE.txt" echo https://github.com/SOMWHY/MiniMetersMobileServer/tree/v%VERSION%
+>> "%STAGE%\SOURCE.txt" echo Tag: v%VERSION%
 >> "%STAGE%\SOURCE.txt" echo.
 >> "%STAGE%\SOURCE.txt" echo This build is distributed under the GNU General Public License v3.
+>> "%STAGE%\SOURCE.txt" echo Full licence: LICENSE. Copyright and modification statements: NOTICE.
+>> "%STAGE%\SOURCE.txt" echo Third-party components: THIRD_PARTY_NOTICES.md.
+>> "%STAGE%\SOURCE.txt" echo.
+>> "%STAGE%\SOURCE.txt" echo MiniMetersMobile is a fork of MiniMetersServer and retains the upstream
+>> "%STAGE%\SOURCE.txt" echo commit history. Upstream: Copyright (C) 2022 Joseph Lyncheski,
+>> "%STAGE%\SOURCE.txt" echo https://github.com/direct-audio/MiniMetersServer .
+>> "%STAGE%\SOURCE.txt" echo Modifications: Copyright (C) 2026 SOMWHY.
+>> "%STAGE%\SOURCE.txt" echo.
 >> "%STAGE%\SOURCE.txt" echo JUCE and clap-juce-extensions are used unmodified as git submodules;
 >> "%STAGE%\SOURCE.txt" echo their pinned commits are recorded in .gitmodules of the repository above.
 

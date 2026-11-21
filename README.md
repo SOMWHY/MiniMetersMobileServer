@@ -85,11 +85,39 @@ Versioned JSON over WebSocket at `/ws`. Two messages matter for compatibility:
 Any field change requires a version bump and a paired app release. The plugin reports its own
 version and the minimum app version it accepts; see `docs/RELEASING.md`.
 
+## Credits
+
+This project is a fork of [`direct-audio/MiniMetersServer`](https://github.com/direct-audio/MiniMetersServer)
+by Joseph Lyncheski, and keeps that upstream history intact. The original work is Copyright (C)
+2022 Joseph Lyncheski and licensed under the GNU GPL v3; [`NOTICE`](NOTICE) records the copyright
+and modification statements.
+
+What this fork changed, on top of upstream `6a21e02` (`git log --oneline 6a21e02..HEAD` is the
+full list):
+
+- **Pairing and transport** — the pairing token is shared between the editor and the WebSocket
+  server, failed revocation is reported instead of swallowed, and the network service survives
+  handoff between services (`2146331`, `e1da769`, `648c3db`).
+- **Realtime streaming** — broadcasts are throttled to 30 Hz, every queued block is merged into each
+  frame, and Nagle's algorithm is disabled so audio is not held back by the socket (`5a7315c`,
+  `b2c5bf7`, `fcac876`).
+- **WebSocket robustness** — concurrent read and write is serialised, idle authenticated clients are
+  kept alive, and handshake and frame validation were tightened (`c49116f`, `6cb44b1`, `127479c`,
+  `a986dd9`).
+- **Plugin identity and UI** — the plugin target, bundle identity and vendor name are
+  `MiniMetersMobile` / `somwhy`, and the editor is built around a large QR code with a dedicated
+  status row (`d1cbe25`, `3b1c99a`, `7803e7f`, `da28f02`).
+- **Mobile bridge** — QR pairing display, a desktop WebSocket test client, and native pairing and
+  audio-queue tests (`e879f00`, `837b5cc`, `f46c6b7`).
+- **Packaging** — Windows VST3 / CLAP / standalone builds with a one-click installer and published
+  checksums (`0d390bf`, `07df4f4`, `91737ce`).
+
 ## Licence
 
-GNU General Public License v3 — see [`LICENSE`](LICENSE). Because this project uses JUCE under its
-GPLv3 option, the corresponding source must stay available: that is this repository.
-Third-party components: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+GNU General Public License v3 — see [`LICENSE`](LICENSE); copyright and modification statements are
+in [`NOTICE`](NOTICE). The `LICENSE` file is reproduced verbatim and is never appended to. Because
+this project uses JUCE under its GPLv3 option, the corresponding source must stay available: that is
+this repository. Third-party components: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Contributing
 

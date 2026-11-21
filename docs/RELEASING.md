@@ -87,8 +87,10 @@ protocol version.
 
 Every published build must ship with:
 
-- `LICENSE` — GPL v3 full text
-- `SOURCE.txt` — this repository and the tag, plus the note that JUCE and clap-juce-extensions are
+- `LICENSE` — GPL v3 full text, reproduced verbatim; never append a copyright line to it
+- `NOTICE` — upstream authorship (`direct-audio/MiniMetersServer`, Copyright (C) 2022 Joseph
+  Lyncheski), the modification copyright, and the first-modified date
+- `SOURCE.txt` — this repository, the tag, and the note that JUCE and clap-juce-extensions are
   unmodified submodules
 - `THIRD_PARTY_NOTICES.md`
 
