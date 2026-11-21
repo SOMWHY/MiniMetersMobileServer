@@ -13,3 +13,4 @@ __pycache__
 .pi
 .vs
 build-check
+/releases
